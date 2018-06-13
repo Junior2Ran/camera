@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>camera</title>
+</head>
+<body>
+  <video width="480" height="360" autoplay></video>
+  <canvas width="480" height="360"></canvas>
+  <canvas width="480" height="360"></canvas>
+  <img src="http://www.iconpng.com/png/handmade/airplane80.png" id="plane">
+</body>
+
+<style>
+  #plane{
+    position:absolute; 
+    top:300px; 
+    right:10px;
+    display: none;
+  }
+  #plane.fly{
+    display: block;
+    -webkit-transform:  translate(-50px);;
+    -ms-transform:  translate(-50px);;
+    -o-transform:  translate(-50px);;
+    transform:  translate(-50px);;
+    -webkit-transition: all 1s ease 1s;;
+    -o-transition: all 1s ease 1s;;
+    transition: all 1s ease 1s;;
+  }
+</style>
+
+<script>
+  var video = document.querySelector("video");
+  var canvas = document.querySelectorAll("canvas")[0];
+  var diff = document.querySelectorAll("canvas")[1];
+  
+  var _width = 480;
+  var _height = 360;
+
+  navigator.getUserMedia({
+    video : true
+  },success,error);
+
+  function success(stream){
+    video.src = window.URL.createObjectURL(stream);
+    video.play();
+  }
+
+  function error(err){
+    console.log("error:"+err);
+  }
+
+  var ctx = canvas.getContext("2d");
+  var diffCtx = diff.getContext("2d");
+  diffCtx.globalCompositeOperation = "difference";
+  var preFrame;
+  var curFrame;
+  var diffFrame;//存放第三张差异帧的imageData
+
+  function captureAndSaveFrame(){
+    preFrame = curFrame;
+    ctx.drawImage(video,0,0,_width,_height);
+    curFrame = canvas.toDataURL();//转为base64图片保存
+  }
+
+  function drawImg(src,context){
+    context = context || diffCtx;
+    var img = new Image();
+    img.src = src;
+    img.onload=function(){  //此处画图时能画出preFrame但是画不出curFrame，原因是curFrame没加载完，所以加一个onload函数
+      context.drawImage(img,0,0,_width,_height);
+    }
+  }
+
+  function renderDiff(){
+    if(!preFrame || !curFrame) return;
+    diffCtx.clearRect(0,0,_width,_height);
+    drawImg(preFrame);
+    drawImg(curFrame);
+    setTimeout(function(){  //等待两幅画都叠加渲染完了才能采到图像数据
+      diffFrame = diffCtx.getImageData( 0, 0, _width, _height );
+    },0); 
+  }
+
+  //关键点，计算差异程度
+  function calcDiff(){
+    if(!diffFrame) return 0;
+    var cache = calcDiff;
+    var count = 0;
+    cache.total = cache.total || 0; //整个画布是白色时所有像素值的总和
+    for (var i = 0, l = diffFrame.width * diffFrame.height *4; i < l; i+=4) { //一个点有R G B A共4条数据
+      count += (diffFrame.data[i] + diffFrame.data[i+1] + diffFrame.data[i+2]);
+      if(!cache.isLoopEver){  //只需在第一次循环里执行
+        cache.total += 255*3; //单个白色像素值
+      }
+    }
+    cache.isLoopEver = true;
+    count *= 2;   //亮度放大
+    //返回“差异画布高亮部分像素总值”占“画布全亮情况像素总值”的比例
+    return Number(count/cache.total).toFixed(2);
+  }
+
+  function playPlane(){
+    var plane = document.getElementById('plane');
+    plane.setAttribute("class","fly")
+  }
+
+  function timer(delta){
+    setTimeout(function(){
+      captureAndSaveFrame();
+      renderDiff();
+      var dick = calcDiff();
+      console.log(dick)
+      if (dick > 0.4) {
+        playPlane();
+      }
+      timer(delta);
+    },delta||500);
+  }
+  
+  timer();
+</script>
+</html>
