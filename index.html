@@ -8,27 +8,7 @@
   <video width="480" height="360" autoplay></video>
   <canvas width="480" height="360"></canvas>
   <canvas width="480" height="360"></canvas>
-  <img src="http://www.iconpng.com/png/handmade/airplane80.png" id="plane">
 </body>
-
-<style>
-  #plane{
-    position:absolute; 
-    top:300px; 
-    right:10px;
-    display: none;
-  }
-  #plane.fly{
-    display: block;
-    -webkit-transform:  translate(-50px);;
-    -ms-transform:  translate(-50px);;
-    -o-transform:  translate(-50px);;
-    transform:  translate(-50px);;
-    -webkit-transition: all 1s ease 1s;;
-    -o-transition: all 1s ease 1s;;
-    transition: all 1s ease 1s;;
-  }
-</style>
 
 <script>
   var video = document.querySelector("video");
@@ -101,19 +81,14 @@
     return Number(count/cache.total).toFixed(2);
   }
 
-  function playPlane(){
-    var plane = document.getElementById('plane');
-    plane.setAttribute("class","fly")
-  }
-
   function timer(delta){
     setTimeout(function(){
       captureAndSaveFrame();
       renderDiff();
       var dick = calcDiff();
       console.log(dick)
-      if (dick > 0.4) {
-        playPlane();
+      if (dick > 0.3) {
+        alert("????")
       }
       timer(delta);
     },delta||500);
