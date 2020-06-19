@@ -34,7 +34,11 @@
     }, success, error);
 
     function success(stream) {
-        video.src = window.URL.createObjectURL(stream);
+        try {
+            video.src = window.URL.createObjectURL(stream);
+        } catch(e) {
+            video.srcObject = stream;
+        }
         video.play();
     }
 
